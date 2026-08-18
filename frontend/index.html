@@ -39,7 +39,7 @@
             <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-slate-700 flex items-center justify-between">
                 <div>
                     <div class="text-xs text-slate-500 uppercase font-bold">Сотрудников</div>
-                    <div id="stat-total-emp" class="text-2xl font-black text-slate-800 mt-1">2</div>
+                    <div id="stat-total-emp" class="text-2xl font-black text-slate-800 mt-1">0</div>
                 </div>
                 <i class="fa-solid fa-users text-2xl text-slate-300"></i>
             </div>
@@ -71,12 +71,16 @@
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
                 <input type="text" id="search-input" oninput="renderApp()" placeholder="Поиск по ФИО, разделу или программе..." class="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-amber-500">
             </div>
-            <div class="flex space-x-2">
+            <div class="flex flex-wrap gap-2">
                 <button onclick="setFilter('all')" id="filter-all" class="px-3 py-1.5 text-xs font-semibold rounded bg-slate-800 text-white">Все записи</button>
                 <button onclick="setFilter('warning')" id="filter-warning" class="px-3 py-1.5 text-xs font-semibold rounded bg-slate-200 text-slate-700 hover:bg-slate-300">Требуют внимания</button>
-                <button onclick="openAddCertModal()" class="px-3 py-1.5 text-xs font-bold rounded bg-amber-500 text-slate-900 hover:bg-amber-600 flex items-center space-x-1">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>Добавить запись</span>
+                <button onclick="openEmployeeModal()" class="px-3 py-1.5 text-xs font-bold rounded bg-slate-800 hover:bg-slate-700 text-white flex items-center space-x-1 shadow">
+                    <i class="fa-solid fa-user-plus mr-1"></i>
+                    <span>+ Сотрудник</span>
+                </button>
+                <button onclick="openAddCertModal()" class="px-3 py-1.5 text-xs font-bold rounded bg-amber-500 hover:bg-amber-600 text-slate-900 flex items-center space-x-1 shadow">
+                    <i class="fa-solid fa-plus mr-1"></i>
+                    <span>+ Запись об обучении</span>
                 </button>
             </div>
         </div>
@@ -84,49 +88,40 @@
         <div id="employees-container" class="space-y-8"></div>
     </div>
 
-    <div id="settings-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 p-4">
+    <!-- Модальное окно Сотрудника -->
+    <div id="emp-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-lg max-w-md w-full overflow-hidden shadow-2xl">
             <div class="bg-slate-900 px-6 py-4 flex justify-between items-center border-b-2 border-amber-500">
-                <h3 class="text-white font-bold text-sm"><i class="fa-solid fa-gear text-amber-500 mr-2"></i>Параметры Email-напоминаний</h3>
-                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                <h3 id="emp-modal-title" class="text-white font-bold text-sm">Добавить сотрудника</h3>
+                <button onclick="closeEmployeeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
             </div>
+            <input type="hidden" id="emp-id">
             <div class="p-6 space-y-3 text-xs">
                 <div>
-                    <label class="font-bold text-slate-700">SMTP Сервер / Порт</label>
-                    <div class="grid grid-cols-3 gap-2 mt-1">
-                        <input id="set-smtp-host" type="text" class="col-span-2 p-2 border rounded" placeholder="smtp.yandex.ru">
-                        <input id="set-smtp-port" type="number" class="p-2 border rounded" placeholder="587">
-                    </div>
+                    <label class="font-bold text-slate-700">ФИО сотрудника *</label>
+                    <input id="emp-fullname" type="text" class="w-full p-2 border rounded mt-1" placeholder="например: Чемезов Н. А.">
                 </div>
                 <div>
-                    <label class="font-bold text-slate-700">Email отправителя (Логин)</label>
-                    <input id="set-smtp-user" type="text" class="w-full p-2 border rounded mt-1" placeholder="safety-bot@company.ru">
+                    <label class="font-bold text-slate-700">Должность</label>
+                    <input id="emp-position" type="text" class="w-full p-2 border rounded mt-1" placeholder="например: Специалист">
                 </div>
                 <div>
-                    <label class="font-bold text-slate-700">Пароль / Пароль приложения</label>
-                    <input id="set-smtp-pass" type="password" class="w-full p-2 border rounded mt-1" placeholder="••••••••••••">
+                    <label class="font-bold text-slate-700">Подразделение / Цех</label>
+                    <input id="emp-department" type="text" class="w-full p-2 border rounded mt-1" placeholder="например: Основное производство">
                 </div>
                 <div>
-                    <label class="font-bold text-slate-700">Email инженера по ОТ (для отчетов)</label>
-                    <input id="set-officer-email" type="email" class="w-full p-2 border rounded mt-1" placeholder="engineer_ot@company.ru">
-                </div>
-                <div>
-                    <label class="font-bold text-slate-700">Интервалы оповещения (дней до срока)</label>
-                    <input id="set-notify-days" type="text" class="w-full p-2 border rounded mt-1" placeholder="30,14,3">
+                    <label class="font-bold text-slate-700">Email для напоминаний</label>
+                    <input id="emp-email" type="email" class="w-full p-2 border rounded mt-1" placeholder="chemezov@company.ru">
                 </div>
             </div>
-            <div class="bg-slate-50 px-6 py-3 border-t flex justify-between">
-                <button onclick="testSendEmail()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded">
-                    <i class="fa-solid fa-paper-plane mr-1"></i>Тест отправки
-                </button>
-                <div class="space-x-2">
-                    <button onclick="closeSettingsModal()" class="px-3 py-1.5 text-xs text-slate-600 font-semibold">Отмена</button>
-                    <button onclick="saveSettings()" class="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold text-xs rounded shadow">Сохранить</button>
-                </div>
+            <div class="bg-slate-50 px-6 py-3 border-t flex justify-end space-x-2">
+                <button onclick="closeEmployeeModal()" class="px-3 py-1.5 text-xs text-slate-600 font-semibold">Отмена</button>
+                <button onclick="saveEmployeeRecord()" class="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold text-xs rounded shadow">Сохранить</button>
             </div>
         </div>
     </div>
 
+    <!-- Модальное окно Записи об обучении -->
     <div id="cert-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-lg max-w-md w-full overflow-hidden shadow-2xl">
             <div class="bg-slate-900 px-6 py-4 flex justify-between items-center border-b-2 border-amber-500">
@@ -153,7 +148,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="font-bold text-slate-700">Дата сдачи</label>
+                        <label class="font-bold text-slate-700">Дата сдачи (ДД.ММ.ГГГГ)</label>
                         <input id="cert-pass-date" type="text" class="w-full p-2 border rounded mt-1" placeholder="20.02.2026">
                     </div>
                     <div>
@@ -169,14 +164,59 @@
         </div>
     </div>
 
+    <!-- Модальное окно настроек Email -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg max-w-md w-full overflow-hidden shadow-2xl">
+            <div class="bg-slate-900 px-6 py-4 flex justify-between items-center border-b-2 border-amber-500">
+                <h3 class="text-white font-bold text-sm"><i class="fa-solid fa-gear text-amber-500 mr-2"></i>Параметры Email-напоминаний</h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6 space-y-3 text-xs">
+                <div>
+                    <label class="font-bold text-slate-700">SMTP Сервер / Порт</label>
+                    <div class="grid grid-cols-3 gap-2 mt-1">
+                        <input id="set-smtp-host" type="text" class="col-span-2 p-2 border rounded" placeholder="smtp.yandex.ru">
+                        <input id="set-smtp-port" type="number" class="p-2 border rounded" placeholder="587">
+                    </div>
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700">Email отправителя (Логин)</label>
+                    <input id="set-smtp-user" type="text" class="w-full p-2 border rounded mt-1" placeholder="safety-bot@company.ru">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700">Пароль / Пароль приложения</label>
+                    <input id="set-smtp-pass" type="password" class="w-full p-2 border rounded mt-1" placeholder="••••••••••••">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700">Email инженера по ОТ</label>
+                    <input id="set-officer-email" type="email" class="w-full p-2 border rounded mt-1" placeholder="engineer_ot@company.ru">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700">Интервалы оповещения (дней)</label>
+                    <input id="set-notify-days" type="text" class="w-full p-2 border rounded mt-1" placeholder="30,14,3">
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-3 border-t flex justify-between">
+                <button onclick="testSendEmail()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded">
+                    <i class="fa-solid fa-paper-plane mr-1"></i>Тест отправки
+                </button>
+                <div class="space-x-2">
+                    <button onclick="closeSettingsModal()" class="px-3 py-1.5 text-xs text-slate-600 font-semibold">Отмена</button>
+                    <button onclick="saveSettings()" class="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold text-xs rounded shadow">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const API_BASE = "http://localhost:8000/api";
+        const API_BASE = "/api";
         let employeesData = [];
         let currentFilter = 'all';
 
         async function fetchData() {
             try {
                 const res = await fetch(`${API_BASE}/employees`);
+                if (!res.ok) throw new Error("HTTP error " + res.status);
                 employeesData = await res.json();
                 renderApp();
             } catch (err) {
@@ -197,6 +237,19 @@
             container.innerHTML = '';
 
             let totalValid = 0, totalWarning = 0, totalExpired = 0;
+
+            if (employeesData.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white p-8 rounded-lg shadow-sm text-center border border-slate-200">
+                        <i class="fa-solid fa-users text-4xl text-slate-300 mb-3"></i>
+                        <p class="text-slate-600 font-semibold">Список сотрудников пуст</p>
+                        <button onclick="openEmployeeModal()" class="mt-3 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold text-xs rounded shadow">
+                            + Добавить сотрудника
+                        </button>
+                    </div>
+                `;
+                return;
+            }
 
             employeesData.forEach(emp => {
                 let filteredCerts = emp.certifications.filter(c => {
@@ -225,17 +278,23 @@
                 let cardHtml = `
                 <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-slate-200">
                     <div class="bg-slate-800 px-6 py-3 flex justify-between items-center text-white border-b-2 border-amber-500">
-                        <div>
+                        <div class="flex items-center space-x-3">
                             <span class="font-bold text-base tracking-wide">${emp.full_name}</span>
-                            <span class="text-xs text-slate-300 ml-3">${emp.position || ''} • ${emp.department || ''}</span>
+                            <span class="text-xs text-slate-300">${emp.position || ''} ${emp.department ? '• ' + emp.department : ''}</span>
                         </div>
                         <div class="flex items-center space-x-2">
                             ${emp.warning_count > 0 ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500 text-slate-900"><i class="fa-solid fa-clock mr-1"></i>${emp.warning_count} истекает</span>` : ''}
                             ${emp.expired_count > 0 ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-600 text-white"><i class="fa-solid fa-circle-exclamation mr-1"></i>${emp.expired_count} просрочено</span>` : ''}
+                            <button onclick="openEmployeeModal(${emp.id}, '${emp.full_name}', '${emp.position || ''}', '${emp.department || ''}', '${emp.email || ''}')" title="Редактировать сотрудника" class="p-1.5 text-slate-400 hover:text-amber-400"><i class="fa-solid fa-user-pen"></i></button>
+                            <button onclick="deleteEmployeeRecord(${emp.id})" title="Удалить сотрудника" class="p-1.5 text-slate-400 hover:text-red-400"><i class="fa-solid fa-user-xmark"></i></button>
                         </div>
                     </div>
                     <div class="p-4 space-y-4">
                 `;
+
+                if (Object.keys(categories).length === 0) {
+                    cardHtml += `<p class="text-xs text-slate-400 italic">Нет записей об обучении. Нажмите «+ Запись об обучении» вверху.</p>`;
+                }
 
                 for (const [catName, certs] of Object.entries(categories)) {
                     cardHtml += `
@@ -294,7 +353,54 @@
             document.getElementById('stat-expired-certs').innerText = totalExpired;
         }
 
+        function openEmployeeModal(id = null, name = '', pos = '', dept = '', email = '') {
+            document.getElementById('emp-modal-title').innerText = id ? "Редактировать сотрудника" : "Добавить сотрудника";
+            document.getElementById('emp-id').value = id || '';
+            document.getElementById('emp-fullname').value = name;
+            document.getElementById('emp-position').value = pos;
+            document.getElementById('emp-department').value = dept;
+            document.getElementById('emp-email').value = email;
+            document.getElementById('emp-modal').classList.remove('hidden');
+        }
+
+        function closeEmployeeModal() {
+            document.getElementById('emp-modal').classList.add('hidden');
+        }
+
+        async function saveEmployeeRecord() {
+            const name = document.getElementById('emp-fullname').value.trim();
+            if (!name) {
+                alert("Пожалуйста, введите ФИО сотрудника");
+                return;
+            }
+            const body = {
+                id: document.getElementById('emp-id').value ? parseInt(document.getElementById('emp-id').value) : null,
+                full_name: name,
+                position: document.getElementById('emp-position').value.trim(),
+                department: document.getElementById('emp-department').value.trim(),
+                email: document.getElementById('emp-email').value.trim()
+            };
+            await fetch(`${API_BASE}/employees`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+            closeEmployeeModal();
+            fetchData();
+        }
+
+        async function deleteEmployeeRecord(id) {
+            if (!confirm("Удалить сотрудника и все его записи об аттестации?")) return;
+            await fetch(`${API_BASE}/employees/${id}`, { method: "DELETE" });
+            fetchData();
+        }
+
         function openAddCertModal() {
+            if (employeesData.length === 0) {
+                alert("Сначала добавьте хотя бы одного сотрудника!");
+                openEmployeeModal();
+                return;
+            }
             document.getElementById('cert-modal-title').innerText = "Добавить запись об аттестации";
             document.getElementById('cert-id').value = "";
             document.getElementById('cert-course-name').value = "";
@@ -351,15 +457,19 @@
         }
 
         async function openSettingsModal() {
-            const res = await fetch(`${API_BASE}/settings`);
-            const s = await res.json();
-            if (s) {
-                document.getElementById('set-smtp-host').value = s.smtp_host || "";
-                document.getElementById('set-smtp-port').value = s.smtp_port || 587;
-                document.getElementById('set-smtp-user').value = s.smtp_user || "";
-                document.getElementById('set-smtp-pass').value = s.smtp_pass || "";
-                document.getElementById('set-officer-email').value = s.safety_officer_email || "";
-                document.getElementById('set-notify-days').value = s.notify_days || "30,14,3";
+            try {
+                const res = await fetch(`${API_BASE}/settings`);
+                const s = await res.json();
+                if (s) {
+                    document.getElementById('set-smtp-host').value = s.smtp_host || "";
+                    document.getElementById('set-smtp-port').value = s.smtp_port || 587;
+                    document.getElementById('set-smtp-user').value = s.smtp_user || "";
+                    document.getElementById('set-smtp-pass').value = s.smtp_pass || "";
+                    document.getElementById('set-officer-email').value = s.safety_officer_email || "";
+                    document.getElementById('set-notify-days').value = s.notify_days || "30,14,3";
+                }
+            } catch (e) {
+                console.error(e);
             }
             document.getElementById('settings-modal').classList.remove('hidden');
         }

@@ -29,6 +29,13 @@ def get_db():
     finally:
         db.close()
 
+class EmployeeSchema(BaseModel):
+    id: Optional[int] = None
+    full_name: str
+    position: Optional[str] = ""
+    department: Optional[str] = ""
+    email: Optional[str] = ""
+
 class CertSchema(BaseModel):
     id: Optional[int] = None
     employee_id: int
@@ -101,10 +108,45 @@ def list_employees(db: Session = Depends(get_db)):
         })
     return result
 
+@app.post("/api/employees")
+def save_employee(emp_data: EmployeeSchema, db: Session = Depends(get_db)):
+    if emp_data.id:
+        emp = db.query(Employee).filter(Employee.id == emp_data.id).first()
+        if not emp:
+            raise HTTPException(status_code=404, detail="Сотрудник не найден")
+        emp.full_name = emp_data.full_name.strip()
+        emp.position = emp_data.position.strip()
+        emp.department = emp_data.department.strip()
+        emp.email = emp_data.email.strip()
+    else:
+        emp = Employee(
+            full_name=emp_data.full_name.strip(),
+            position=emp_data.position.strip(),
+            department=emp_data.department.strip(),
+            email=emp_data.email.strip()
+        )
+        db.add(emp)
+    db.commit()
+    return {"status": "ok"}
+
+@app.delete("/api/employees/{emp_id}")
+def delete_employee(emp_id: int, db: Session = Depends(get_db)):
+    emp = db.query(Employee).filter(Employee.id == emp_id).first()
+    if emp:
+        db.query(Certification).filter(Certification.employee_id == emp_id).delete()
+        db.delete(emp)
+        db.commit()
+    return {"status": "ok"}
+
 @app.post("/api/certifications")
 def save_certification(cert_data: CertSchema, db: Session = Depends(get_db)):
-    p_date = datetime.strptime(cert_data.pass_date, "%d.%m.%Y").date() if cert_data.pass_date and cert_data.pass_date != "-" else None
-    v_date = datetime.strptime(cert_data.valid_until, "%d.%m.%Y").date() if cert_data.valid_until and cert_data.valid_until != "-" else None
+    p_date = None
+    if cert_data.pass_date and cert_data.pass_date.strip() not in ["-", ""]:
+        p_date = datetime.strptime(cert_data.pass_date.strip(), "%d.%m.%Y").date()
+    
+    v_date = None
+    if cert_data.valid_until and cert_data.valid_until.strip() not in ["-", ""]:
+        v_date = datetime.strptime(cert_data.valid_until.strip(), "%d.%m.%Y").date()
 
     if cert_data.id:
         cert = db.query(Certification).filter(Certification.id == cert_data.id).first()
@@ -173,5 +215,9 @@ def test_email(db: Session = Depends(get_db)):
     )
     return {"success": res}
 
-if os.path.exists("../frontend"):
-    app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")
+static_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
+if not os.path.exists(static_path):
+    static_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "frontend"))
+
+if os.path.exists(static_path):
+    app.mount("/", StaticFiles(directory=static_path, html=True), name="frontend")
