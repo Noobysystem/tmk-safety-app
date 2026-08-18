@@ -1,0 +1,177 @@
+﻿from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from typing import List, Optional
+from datetime import date, datetime
+import os
+
+from database import SessionLocal, Employee, Certification, SystemSettings, init_db
+from seed_data import populate_initial_data
+from scheduler import start_scheduler
+from mailer import send_alert_email
+
+app = FastAPI(title="TMK Safety & Training Hub")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+class CertSchema(BaseModel):
+    id: Optional[int] = None
+    employee_id: int
+    category: str
+    course_name: str
+    pass_date: Optional[str] = None
+    valid_until: Optional[str] = None
+    notes: Optional[str] = ""
+
+class SettingsSchema(BaseModel):
+    smtp_host: str
+    smtp_port: int
+    smtp_user: str
+    smtp_pass: str
+    sender_email: str
+    safety_officer_email: str
+    notify_days: str
+
+@app.on_event("startup")
+def on_startup():
+    init_db()
+    populate_initial_data()
+    start_scheduler()
+
+@app.get("/api/employees")
+def list_employees(db: Session = Depends(get_db)):
+    employees = db.query(Employee).all()
+    today = date.today()
+    result = []
+    
+    for emp in employees:
+        certs = db.query(Certification).filter(Certification.employee_id == emp.id).all()
+        expired_count = 0
+        warning_count = 0
+        
+        cert_list = []
+        for c in certs:
+            days_left = None
+            status = "valid"
+            if c.valid_until:
+                days_left = (c.valid_until - today).days
+                if days_left < 0:
+                    status = "expired"
+                    expired_count += 1
+                elif days_left <= 30:
+                    status = "warning"
+                    warning_count += 1
+            else:
+                status = "permanent"
+
+            cert_list.append({
+                "id": c.id,
+                "category": c.category,
+                "course_name": c.course_name,
+                "pass_date": c.pass_date.strftime("%d.%m.%Y") if c.pass_date else "-",
+                "valid_until": c.valid_until.strftime("%d.%m.%Y") if c.valid_until else "-",
+                "days_left": days_left,
+                "status": status
+            })
+
+        result.append({
+            "id": emp.id,
+            "full_name": emp.full_name,
+            "position": emp.position,
+            "department": emp.department,
+            "email": emp.email,
+            "expired_count": expired_count,
+            "warning_count": warning_count,
+            "certifications": cert_list
+        })
+    return result
+
+@app.post("/api/certifications")
+def save_certification(cert_data: CertSchema, db: Session = Depends(get_db)):
+    p_date = datetime.strptime(cert_data.pass_date, "%d.%m.%Y").date() if cert_data.pass_date and cert_data.pass_date != "-" else None
+    v_date = datetime.strptime(cert_data.valid_until, "%d.%m.%Y").date() if cert_data.valid_until and cert_data.valid_until != "-" else None
+
+    if cert_data.id:
+        cert = db.query(Certification).filter(Certification.id == cert_data.id).first()
+        if not cert:
+            raise HTTPException(status_code=404, detail="Запись не найдена")
+        cert.category = cert_data.category
+        cert.course_name = cert_data.course_name
+        cert.pass_date = p_date
+        cert.valid_until = v_date
+    else:
+        cert = Certification(
+            employee_id=cert_data.employee_id,
+            category=cert_data.category,
+            course_name=cert_data.course_name,
+            pass_date=p_date,
+            valid_until=v_date
+        )
+        db.add(cert)
+    
+    db.commit()
+    return {"status": "ok"}
+
+@app.delete("/api/certifications/{cert_id}")
+def delete_cert(cert_id: int, db: Session = Depends(get_db)):
+    c = db.query(Certification).filter(Certification.id == cert_id).first()
+    if c:
+        db.delete(c)
+        db.commit()
+    return {"status": "ok"}
+
+@app.get("/api/settings")
+def get_settings(db: Session = Depends(get_db)):
+    s = db.query(SystemSettings).first()
+    return s
+
+@app.post("/api/settings")
+def update_settings(data: SettingsSchema, db: Session = Depends(get_db)):
+    s = db.query(SystemSettings).first()
+    if not s:
+        s = SystemSettings()
+        db.add(s)
+    s.smtp_host = data.smtp_host
+    s.smtp_port = data.smtp_port
+    s.smtp_user = data.smtp_user
+    s.smtp_pass = data.smtp_pass
+    s.sender_email = data.sender_email
+    s.safety_officer_email = data.safety_officer_email
+    s.notify_days = data.notify_days
+    db.commit()
+    return {"status": "ok"}
+
+@app.post("/api/settings/test-email")
+def test_email(db: Session = Depends(get_db)):
+    s = db.query(SystemSettings).first()
+    res = send_alert_email(
+        settings=s,
+        recipient_email=s.safety_officer_email,
+        subject="🧪 Тестовое оповещение из системы обучения ТМК",
+        items=[{
+            "employee_name": "Тестовый Сотрудник",
+            "category": "Охрана труда",
+            "course_name": "Проверка системы рассылки",
+            "valid_until": "30.09.2026",
+            "days_left": 30
+        }]
+    )
+    return {"success": res}
+
+if os.path.exists("../frontend"):
+    app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")

@@ -1,0 +1,404 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ТМК — Учет обучения и аттестаций персонала</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-slate-900 text-white border-b-4 border-amber-500 shadow-md">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <div class="w-10 h-10 rounded bg-amber-500 flex items-center justify-center font-black text-slate-900 text-xl tracking-tighter">
+                    ТМК
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">Реестр проверки знаний и обучения персонала</h1>
+                    <p class="text-xs text-slate-400">Охрана труда • Промбезопасность • Электробезопасность • Медосмотры</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3 mt-3 sm:mt-0">
+                <button onclick="openSettingsModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded flex items-center space-x-2 border border-slate-700 transition">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span>Настройка Email-бота</span>
+                </button>
+                <button onclick="fetchData()" class="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-bold rounded flex items-center space-x-1 transition shadow">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Обновить</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-6 py-5 w-full">
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-slate-700 flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-slate-500 uppercase font-bold">Сотрудников</div>
+                    <div id="stat-total-emp" class="text-2xl font-black text-slate-800 mt-1">2</div>
+                </div>
+                <i class="fa-solid fa-users text-2xl text-slate-300"></i>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-emerald-500 flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-slate-500 uppercase font-bold">Действующих допусков</div>
+                    <div id="stat-valid-certs" class="text-2xl font-black text-emerald-600 mt-1">0</div>
+                </div>
+                <i class="fa-solid fa-circle-check text-2xl text-emerald-200"></i>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-amber-500 flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-slate-500 uppercase font-bold">Истекают скоро (≤30 дн.)</div>
+                    <div id="stat-warning-certs" class="text-2xl font-black text-amber-600 mt-1">0</div>
+                </div>
+                <i class="fa-solid fa-triangle-exclamation text-2xl text-amber-200"></i>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-red-500 flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-slate-500 uppercase font-bold">Просрочено</div>
+                    <div id="stat-expired-certs" class="text-2xl font-black text-red-600 mt-1">0</div>
+                </div>
+                <i class="fa-solid fa-circle-xmark text-2xl text-red-200"></i>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-wrap gap-3 items-center justify-between">
+            <div class="relative flex-1 min-w-[250px]">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
+                <input type="text" id="search-input" oninput="renderApp()" placeholder="Поиск по ФИО, разделу или программе..." class="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-amber-500">
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="setFilter('all')" id="filter-all" class="px-3 py-1.5 text-xs font-semibold rounded bg-slate-800 text-white">Все записи</button>
+                <button onclick="setFilter('warning')" id="filter-warning" class="px-3 py-1.5 text-xs font-semibold rounded bg-slate-200 text-slate-700 hover:bg-slate-300">Требуют внимания</button>
+                <button onclick="openAddCertModal()" class="px-3 py-1.5 text-xs font-bold rounded bg-amber-500 text-slate-900 hover:bg-amber-600 flex items-center space-x-1">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Добавить запись</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="employees-container" class="space-y-8"></div>
+    </div>
+
+    <div id="settings-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg max-w-md w-full overflow-hidden shadow-2xl">
+            <div class="bg-slate-900 px-6 py-4 flex justify-between items-center border-b-2 border-amber-500">
+                <h3 class="text-white font-bold text-sm"><i class="fa-solid fa-gear text-amber-500 mr-2"></i>Параметры Email-напоминаний</h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6 space-y-3 text-xs">
+                <div>
+                    <label class="font-bold text-slate-700">SMTP Сервер / Порт</label>
+                    <div class="grid grid-cols-3 gap-2 mt-1">
+                        <input id="set-smtp-host" type="text" class="col-span-2 p-2 border rounded" placeholder="smtp.yandex.ru">
+                        <input id="set-smtp-port" type="number" class="p-2 border rounded" placeholder="587">
+                    </div>
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700">Email отправителя (Логин)</label>
+                    <input id="set-smtp-user" type="text" class="w-full p-2 border rounded mt-1" placeholder="safety-bot@company.ru">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700">Пароль / Пароль приложения</label>
+                    <input id="set-smtp-pass" type="password" class="w-full p-2 border rounded mt-1" placeholder="••••••••••••">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700">Email инженера по ОТ (для отчетов)</label>
+                    <input id="set-officer-email" type="email" class="w-full p-2 border rounded mt-1" placeholder="engineer_ot@company.ru">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700">Интервалы оповещения (дней до срока)</label>
+                    <input id="set-notify-days" type="text" class="w-full p-2 border rounded mt-1" placeholder="30,14,3">
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-3 border-t flex justify-between">
+                <button onclick="testSendEmail()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded">
+                    <i class="fa-solid fa-paper-plane mr-1"></i>Тест отправки
+                </button>
+                <div class="space-x-2">
+                    <button onclick="closeSettingsModal()" class="px-3 py-1.5 text-xs text-slate-600 font-semibold">Отмена</button>
+                    <button onclick="saveSettings()" class="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold text-xs rounded shadow">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="cert-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg max-w-md w-full overflow-hidden shadow-2xl">
+            <div class="bg-slate-900 px-6 py-4 flex justify-between items-center border-b-2 border-amber-500">
+                <h3 id="cert-modal-title" class="text-white font-bold text-sm">Добавить запись об аттестации</h3>
+                <button onclick="closeCertModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="hidden" id="cert-id">
+            <div class="p-6 space-y-3 text-xs">
+                <div>
+                    <label class="font-bold text-slate-700">Сотрудник</label>
+                    <select id="cert-employee-id" class="w-full p-2 border rounded mt-1"></select>
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700">Раздел</label>
+                    <select id="cert-category" class="w-full p-2 border rounded mt-1">
+                        <option value="Охрана труда">Охрана труда</option>
+                        <option value="ПРОМБЕЗОПАСНОСТЬ">ПРОМБЕЗОПАСНОСТЬ</option>
+                        <option value="Медкомиссия">Медкомиссия</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700">Программа / Курс</label>
+                    <input id="cert-course-name" type="text" class="w-full p-2 border rounded mt-1" placeholder="например: Программа «А», Б.1.1">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="font-bold text-slate-700">Дата сдачи</label>
+                        <input id="cert-pass-date" type="text" class="w-full p-2 border rounded mt-1" placeholder="20.02.2026">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-700">Действительно до</label>
+                        <input id="cert-valid-until" type="text" class="w-full p-2 border rounded mt-1" placeholder="20.02.2029 или -">
+                    </div>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-3 border-t flex justify-end space-x-2">
+                <button onclick="closeCertModal()" class="px-3 py-1.5 text-xs text-slate-600 font-semibold">Отмена</button>
+                <button onclick="saveCertRecord()" class="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold text-xs rounded shadow">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:8000/api";
+        let employeesData = [];
+        let currentFilter = 'all';
+
+        async function fetchData() {
+            try {
+                const res = await fetch(`${API_BASE}/employees`);
+                employeesData = await res.json();
+                renderApp();
+            } catch (err) {
+                console.error("Ошибка загрузки данных:", err);
+            }
+        }
+
+        function setFilter(f) {
+            currentFilter = f;
+            document.getElementById('filter-all').className = f === 'all' ? 'px-3 py-1.5 text-xs font-semibold rounded bg-slate-800 text-white' : 'px-3 py-1.5 text-xs font-semibold rounded bg-slate-200 text-slate-700';
+            document.getElementById('filter-warning').className = f === 'warning' ? 'px-3 py-1.5 text-xs font-semibold rounded bg-slate-800 text-white' : 'px-3 py-1.5 text-xs font-semibold rounded bg-slate-200 text-slate-700';
+            renderApp();
+        }
+
+        function renderApp() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const container = document.getElementById('employees-container');
+            container.innerHTML = '';
+
+            let totalValid = 0, totalWarning = 0, totalExpired = 0;
+
+            employeesData.forEach(emp => {
+                let filteredCerts = emp.certifications.filter(c => {
+                    const matchesSearch = emp.full_name.toLowerCase().includes(query) ||
+                                          c.course_name.toLowerCase().includes(query) ||
+                                          c.category.toLowerCase().includes(query);
+                    if (!matchesSearch) return false;
+                    if (currentFilter === 'warning') return c.status === 'warning' || c.status === 'expired';
+                    return true;
+                });
+
+                emp.certifications.forEach(c => {
+                    if (c.status === 'valid' || c.status === 'permanent') totalValid++;
+                    else if (c.status === 'warning') totalWarning++;
+                    else if (c.status === 'expired') totalExpired++;
+                });
+
+                if (filteredCerts.length === 0 && query !== '') return;
+
+                const categories = {};
+                filteredCerts.forEach(c => {
+                    if (!categories[c.category]) categories[c.category] = [];
+                    categories[c.category].push(c);
+                });
+
+                let cardHtml = `
+                <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-slate-200">
+                    <div class="bg-slate-800 px-6 py-3 flex justify-between items-center text-white border-b-2 border-amber-500">
+                        <div>
+                            <span class="font-bold text-base tracking-wide">${emp.full_name}</span>
+                            <span class="text-xs text-slate-300 ml-3">${emp.position || ''} • ${emp.department || ''}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            ${emp.warning_count > 0 ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500 text-slate-900"><i class="fa-solid fa-clock mr-1"></i>${emp.warning_count} истекает</span>` : ''}
+                            ${emp.expired_count > 0 ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-600 text-white"><i class="fa-solid fa-circle-exclamation mr-1"></i>${emp.expired_count} просрочено</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="p-4 space-y-4">
+                `;
+
+                for (const [catName, certs] of Object.entries(categories)) {
+                    cardHtml += `
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left border-collapse border border-slate-300">
+                                <thead>
+                                    <tr class="bg-amber-400 text-slate-900 font-black uppercase text-[11px] tracking-wider border-b border-slate-400">
+                                        <th class="py-2 px-3 w-1/2 border-r border-slate-400">${catName}</th>
+                                        <th class="py-2 px-3 w-1/4 text-center border-r border-slate-400">Дата прохождения</th>
+                                        <th class="py-2 px-3 w-1/4 text-center border-r border-slate-400">Действительно до</th>
+                                        <th class="py-2 px-2 w-16 text-center">Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200">
+                    `;
+
+                    certs.forEach(c => {
+                        let statusBg = "bg-white";
+                        let badge = "";
+
+                        if (c.status === "expired") {
+                            statusBg = "bg-red-50 text-red-900 font-semibold";
+                            badge = `<span class="ml-2 px-1.5 py-0.5 bg-red-600 text-white rounded text-[10px] font-bold">Просрочено</span>`;
+                        } else if (c.status === "warning") {
+                            statusBg = "bg-amber-50 text-amber-900 font-semibold";
+                            badge = `<span class="ml-2 px-1.5 py-0.5 bg-amber-500 text-slate-900 rounded text-[10px] font-bold">Осталось ${c.days_left} дн.</span>`;
+                        }
+
+                        cardHtml += `
+                            <tr class="${statusBg} hover:bg-slate-100 transition">
+                                <td class="py-1.5 px-3 border-r border-slate-300 font-medium">${c.course_name} ${badge}</td>
+                                <td class="py-1.5 px-3 border-r border-slate-300 text-center">${c.pass_date}</td>
+                                <td class="py-1.5 px-3 border-r border-slate-300 text-center font-bold">${c.valid_until}</td>
+                                <td class="py-1.5 px-2 text-center space-x-1">
+                                    <button onclick="editCertRecord(${c.id}, ${emp.id}, '${c.category}', '${c.course_name}', '${c.pass_date}', '${c.valid_until}')" class="text-slate-500 hover:text-amber-600"><i class="fa-solid fa-pen-to-square"></i></button>
+                                    <button onclick="deleteCertRecord(${c.id})" class="text-slate-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    cardHtml += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+
+                cardHtml += `</div></div>`;
+                container.innerHTML += cardHtml;
+            });
+
+            document.getElementById('stat-total-emp').innerText = employeesData.length;
+            document.getElementById('stat-valid-certs').innerText = totalValid;
+            document.getElementById('stat-warning-certs').innerText = totalWarning;
+            document.getElementById('stat-expired-certs').innerText = totalExpired;
+        }
+
+        function openAddCertModal() {
+            document.getElementById('cert-modal-title').innerText = "Добавить запись об аттестации";
+            document.getElementById('cert-id').value = "";
+            document.getElementById('cert-course-name').value = "";
+            document.getElementById('cert-pass-date').value = "";
+            document.getElementById('cert-valid-until').value = "";
+            
+            const sel = document.getElementById('cert-employee-id');
+            sel.innerHTML = employeesData.map(e => `<option value="${e.id}">${e.full_name}</option>`).join('');
+            
+            document.getElementById('cert-modal').classList.remove('hidden');
+        }
+
+        function editCertRecord(id, empId, cat, name, pDate, vDate) {
+            document.getElementById('cert-modal-title').innerText = "Редактировать запись";
+            document.getElementById('cert-id').value = id;
+            
+            const sel = document.getElementById('cert-employee-id');
+            sel.innerHTML = employeesData.map(e => `<option value="${e.id}" ${e.id === empId ? 'selected':''}>${e.full_name}</option>`).join('');
+            
+            document.getElementById('cert-category').value = cat;
+            document.getElementById('cert-course-name').value = name;
+            document.getElementById('cert-pass-date').value = pDate;
+            document.getElementById('cert-valid-until').value = vDate;
+            
+            document.getElementById('cert-modal').classList.remove('hidden');
+        }
+
+        function closeCertModal() {
+            document.getElementById('cert-modal').classList.add('hidden');
+        }
+
+        async function saveCertRecord() {
+            const body = {
+                id: document.getElementById('cert-id').value ? parseInt(document.getElementById('cert-id').value) : null,
+                employee_id: parseInt(document.getElementById('cert-employee-id').value),
+                category: document.getElementById('cert-category').value,
+                course_name: document.getElementById('cert-course-name').value,
+                pass_date: document.getElementById('cert-pass-date').value,
+                valid_until: document.getElementById('cert-valid-until').value
+            };
+            await fetch(`${API_BASE}/certifications`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(body)
+            });
+            closeCertModal();
+            fetchData();
+        }
+
+        async function deleteCertRecord(id) {
+            if (!confirm("Удалить эту запись?")) return;
+            await fetch(`${API_BASE}/certifications/${id}`, { method: "DELETE" });
+            fetchData();
+        }
+
+        async function openSettingsModal() {
+            const res = await fetch(`${API_BASE}/settings`);
+            const s = await res.json();
+            if (s) {
+                document.getElementById('set-smtp-host').value = s.smtp_host || "";
+                document.getElementById('set-smtp-port').value = s.smtp_port || 587;
+                document.getElementById('set-smtp-user').value = s.smtp_user || "";
+                document.getElementById('set-smtp-pass').value = s.smtp_pass || "";
+                document.getElementById('set-officer-email').value = s.safety_officer_email || "";
+                document.getElementById('set-notify-days').value = s.notify_days || "30,14,3";
+            }
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        async function saveSettings() {
+            const body = {
+                smtp_host: document.getElementById('set-smtp-host').value,
+                smtp_port: parseInt(document.getElementById('set-smtp-port').value),
+                smtp_user: document.getElementById('set-smtp-user').value,
+                smtp_pass: document.getElementById('set-smtp-pass').value,
+                sender_email: document.getElementById('set-smtp-user').value,
+                safety_officer_email: document.getElementById('set-officer-email').value,
+                notify_days: document.getElementById('set-notify-days').value
+            };
+            await fetch(`${API_BASE}/settings`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(body)
+            });
+            alert("Настройки успешно сохранены!");
+            closeSettingsModal();
+        }
+
+        async function testSendEmail() {
+            alert("Отправка тестового письма...");
+            const res = await fetch(`${API_BASE}/settings/test-email`, { method: "POST" });
+            const data = await res.json();
+            if (data.success) {
+                alert("✅ Тестовое письмо успешно отправлено!");
+            } else {
+                alert("❌ Ошибка отправки. Проверьте настройки SMTP и пароль приложения.");
+            }
+        }
+
+        fetchData();
+    </script>
+</body>
+</html>
