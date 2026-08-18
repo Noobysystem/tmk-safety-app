@@ -22,8 +22,8 @@
             </div>
 
             <div class="flex items-center space-x-3 mt-3 sm:mt-0">
-                <button onclick="openSettingsModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded flex items-center space-x-2 border border-slate-700 transition">
-                    <i class="fa-solid fa-envelope"></i>
+                <button onclick="openSettingsModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded flex items-center space-x-2 border border-slate-700 transition shadow">
+                    <i class="fa-solid fa-envelope text-amber-400"></i>
                     <span>Настройка Email-бота</span>
                 </button>
                 <button onclick="fetchData()" class="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-bold rounded flex items-center space-x-1 transition shadow">
@@ -121,7 +121,7 @@
         </div>
     </div>
 
-    <!-- Модальное окно Записи об обучении -->
+    <!-- Модальное окно Записи обучения -->
     <div id="cert-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-lg max-w-md w-full overflow-hidden shadow-2xl">
             <div class="bg-slate-900 px-6 py-4 flex justify-between items-center border-b-2 border-amber-500">
@@ -172,33 +172,37 @@
                 <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="p-6 space-y-3 text-xs">
+                <!-- Блок статуса отправки -->
+                <div id="smtp-status-box" class="hidden p-3 rounded text-xs font-semibold"></div>
+
                 <div>
-                    <label class="font-bold text-slate-700">SMTP Сервер / Порт</label>
+                    <label class="font-bold text-slate-700">SMTP Сервер / Порт (Яндекс: 465)</label>
                     <div class="grid grid-cols-3 gap-2 mt-1">
-                        <input id="set-smtp-host" type="text" class="col-span-2 p-2 border rounded" placeholder="smtp.yandex.ru">
-                        <input id="set-smtp-port" type="number" class="p-2 border rounded" placeholder="587">
+                        <input id="set-smtp-host" type="text" class="col-span-2 p-2 border rounded font-mono" placeholder="smtp.yandex.ru">
+                        <input id="set-smtp-port" type="number" class="p-2 border rounded font-mono" placeholder="465">
                     </div>
                 </div>
                 <div>
                     <label class="font-bold text-slate-700">Email отправителя (Логин)</label>
-                    <input id="set-smtp-user" type="text" class="w-full p-2 border rounded mt-1" placeholder="safety-bot@company.ru">
+                    <input id="set-smtp-user" type="text" class="w-full p-2 border rounded mt-1 font-mono" placeholder="chemezov.nick@yandex.ru">
                 </div>
                 <div>
-                    <label class="font-bold text-slate-700">Пароль / Пароль приложения</label>
-                    <input id="set-smtp-pass" type="password" class="w-full p-2 border rounded mt-1" placeholder="••••••••••••">
+                    <label class="font-bold text-slate-700">Пароль приложения Яндекса</label>
+                    <input id="set-smtp-pass" type="password" class="w-full p-2 border rounded mt-1 font-mono" placeholder="16-значный пароль приложения">
                 </div>
                 <div>
                     <label class="font-bold text-slate-700">Email инженера по ОТ</label>
-                    <input id="set-officer-email" type="email" class="w-full p-2 border rounded mt-1" placeholder="engineer_ot@company.ru">
+                    <input id="set-officer-email" type="email" class="w-full p-2 border rounded mt-1 font-mono" placeholder="chemezov.nick@yandex.ru">
                 </div>
                 <div>
                     <label class="font-bold text-slate-700">Интервалы оповещения (дней)</label>
-                    <input id="set-notify-days" type="text" class="w-full p-2 border rounded mt-1" placeholder="30,14,3">
+                    <input id="set-notify-days" type="text" class="w-full p-2 border rounded mt-1 font-mono" placeholder="30,14,3">
                 </div>
             </div>
-            <div class="bg-slate-50 px-6 py-3 border-t flex justify-between">
-                <button onclick="testSendEmail()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded">
-                    <i class="fa-solid fa-paper-plane mr-1"></i>Тест отправки
+            <div class="bg-slate-50 px-6 py-3 border-t flex justify-between items-center">
+                <button id="btn-test-email" onclick="testSendEmail()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded transition flex items-center space-x-1 shadow">
+                    <i class="fa-solid fa-paper-plane text-amber-400"></i>
+                    <span>Тест отправки</span>
                 </button>
                 <div class="space-x-2">
                     <button onclick="closeSettingsModal()" class="px-3 py-1.5 text-xs text-slate-600 font-semibold">Отмена</button>
@@ -293,7 +297,7 @@
                 `;
 
                 if (Object.keys(categories).length === 0) {
-                    cardHtml += `<p class="text-xs text-slate-400 italic">Нет записей об обучении. Нажмите «+ Запись об обучении» вверху.</p>`;
+                    cardHtml += `<p class="text-xs text-slate-400 italic">Нет записей об обучении.</p>`;
                 }
 
                 for (const [catName, certs] of Object.entries(categories)) {
@@ -397,7 +401,7 @@
 
         function openAddCertModal() {
             if (employeesData.length === 0) {
-                alert("Сначала добавьте хотя бы одного сотрудника!");
+                alert("Сначала добавьте сотрудника!");
                 openEmployeeModal();
                 return;
             }
@@ -456,13 +460,26 @@
             fetchData();
         }
 
+        function getFormSettings() {
+            return {
+                smtp_host: document.getElementById('set-smtp-host').value.trim() || "smtp.yandex.ru",
+                smtp_port: parseInt(document.getElementById('set-smtp-port').value) || 465,
+                smtp_user: document.getElementById('set-smtp-user').value.trim(),
+                smtp_pass: document.getElementById('set-smtp-pass').value.trim(),
+                sender_email: document.getElementById('set-smtp-user').value.trim(),
+                safety_officer_email: document.getElementById('set-officer-email').value.trim() || document.getElementById('set-smtp-user').value.trim(),
+                notify_days: document.getElementById('set-notify-days').value.trim() || "30,14,3"
+            };
+        }
+
         async function openSettingsModal() {
+            document.getElementById('smtp-status-box').classList.add('hidden');
             try {
                 const res = await fetch(`${API_BASE}/settings`);
                 const s = await res.json();
                 if (s) {
-                    document.getElementById('set-smtp-host').value = s.smtp_host || "";
-                    document.getElementById('set-smtp-port').value = s.smtp_port || 587;
+                    document.getElementById('set-smtp-host').value = s.smtp_host || "smtp.yandex.ru";
+                    document.getElementById('set-smtp-port').value = s.smtp_port || 465;
                     document.getElementById('set-smtp-user').value = s.smtp_user || "";
                     document.getElementById('set-smtp-pass').value = s.smtp_pass || "";
                     document.getElementById('set-officer-email').value = s.safety_officer_email || "";
@@ -479,32 +496,57 @@
         }
 
         async function saveSettings() {
-            const body = {
-                smtp_host: document.getElementById('set-smtp-host').value,
-                smtp_port: parseInt(document.getElementById('set-smtp-port').value),
-                smtp_user: document.getElementById('set-smtp-user').value,
-                smtp_pass: document.getElementById('set-smtp-pass').value,
-                sender_email: document.getElementById('set-smtp-user').value,
-                safety_officer_email: document.getElementById('set-officer-email').value,
-                notify_days: document.getElementById('set-notify-days').value
-            };
+            const body = getFormSettings();
             await fetch(`${API_BASE}/settings`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(body)
             });
-            alert("Настройки успешно сохранены!");
-            closeSettingsModal();
+            const statusBox = document.getElementById('smtp-status-box');
+            statusBox.className = "p-3 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300";
+            statusBox.innerText = "✅ Настройки успешно сохранены!";
+            statusBox.classList.remove('hidden');
         }
 
         async function testSendEmail() {
-            alert("Отправка тестового письма...");
-            const res = await fetch(`${API_BASE}/settings/test-email`, { method: "POST" });
-            const data = await res.json();
-            if (data.success) {
-                alert("✅ Тестовое письмо успешно отправлено!");
-            } else {
-                alert("❌ Ошибка отправки. Проверьте настройки SMTP и пароль приложения.");
+            const body = getFormSettings();
+            const statusBox = document.getElementById('smtp-status-box');
+            statusBox.classList.add('hidden');
+
+            if (!body.smtp_user || !body.smtp_pass) {
+                statusBox.className = "p-3 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300";
+                statusBox.innerText = "⚠️ Пожалуйста, введите логин и пароль приложения!";
+                statusBox.classList.remove('hidden');
+                return;
+            }
+
+            const btn = document.getElementById('btn-test-email');
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i>Отправка...`;
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_BASE}/settings/test-email`, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    statusBox.className = "p-3 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300";
+                    statusBox.innerHTML = `✅ Письмо успешно отправлено на <b>${body.safety_officer_email}</b>! Проверьте папку «Входящие» или «Спам».`;
+                } else {
+                    statusBox.className = "p-3 rounded text-xs font-semibold bg-red-100 text-red-800 border border-red-300";
+                    statusBox.innerHTML = `❌ <b>Ошибка:</b> ${data.message}`;
+                }
+                statusBox.classList.remove('hidden');
+            } catch (err) {
+                statusBox.className = "p-3 rounded text-xs font-semibold bg-red-100 text-red-800 border border-red-300";
+                statusBox.innerText = "❌ Ошибка соединения с сервером: " + err;
+                statusBox.classList.remove('hidden');
+            } finally {
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane text-amber-400 mr-1"></i>Тест отправки`;
+                btn.disabled = false;
             }
         }
 
