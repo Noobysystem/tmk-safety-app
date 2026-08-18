@@ -46,13 +46,13 @@ class CertSchema(BaseModel):
     notes: Optional[str] = ""
 
 class SettingsSchema(BaseModel):
-    smtp_host: str
-    smtp_port: int
-    smtp_user: str
-    smtp_pass: str
-    sender_email: str
-    safety_officer_email: str
-    notify_days: str
+    smtp_host: Optional[str] = "smtp.yandex.ru"
+    smtp_port: Optional[int] = 465
+    smtp_user: Optional[str] = ""
+    smtp_pass: Optional[str] = ""
+    sender_email: Optional[str] = ""
+    safety_officer_email: Optional[str] = ""
+    notify_days: Optional[str] = "30,14,3"
 
 @app.on_event("startup")
 def on_startup():
@@ -188,32 +188,48 @@ def update_settings(data: SettingsSchema, db: Session = Depends(get_db)):
     if not s:
         s = SystemSettings()
         db.add(s)
-    s.smtp_host = data.smtp_host
-    s.smtp_port = data.smtp_port
-    s.smtp_user = data.smtp_user
-    s.smtp_pass = data.smtp_pass
-    s.sender_email = data.sender_email
-    s.safety_officer_email = data.safety_officer_email
-    s.notify_days = data.notify_days
+    s.smtp_host = (data.smtp_host or "smtp.yandex.ru").strip()
+    s.smtp_port = int(data.smtp_port or 465)
+    s.smtp_user = (data.smtp_user or "").strip()
+    s.smtp_pass = (data.smtp_pass or "").strip().replace(" ", "")
+    s.sender_email = (data.sender_email or s.smtp_user).strip()
+    s.safety_officer_email = (data.safety_officer_email or s.smtp_user).strip()
+    s.notify_days = (data.notify_days or "30,14,3").strip()
     db.commit()
     return {"status": "ok"}
 
 @app.post("/api/settings/test-email")
-def test_email(db: Session = Depends(get_db)):
+def test_email(test_data: Optional[SettingsSchema] = None, db: Session = Depends(get_db)):
     s = db.query(SystemSettings).first()
-    res = send_alert_email(
-        settings=s,
-        recipient_email=s.safety_officer_email,
+    if not s:
+        s = SystemSettings()
+        db.add(s)
+
+    if test_data:
+        s.smtp_host = (test_data.smtp_host or "smtp.yandex.ru").strip()
+        s.smtp_port = int(test_data.smtp_port or 465)
+        s.smtp_user = (test_data.smtp_user or "").strip()
+        s.smtp_pass = (test_data.smtp_pass or "").strip().replace(" ", "")
+        s.sender_email = (test_data.sender_email or s.smtp_user).strip()
+        s.safety_officer_email = (test_data.safety_officer_email or s.smtp_user).strip()
+        s.notify_days = (test_data.notify_days or "30,14,3").strip()
+        db.commit()
+
+    cfg = s
+    recipient = cfg.safety_officer_email if cfg.safety_officer_email else cfg.smtp_user
+    success, msg = send_alert_email(
+        settings=cfg,
+        recipient_email=recipient,
         subject="🧪 Тестовое оповещение из системы обучения ТМК",
         items=[{
-            "employee_name": "Тестовый Сотрудник",
+            "employee_name": "Чемезов Н. А.",
             "category": "Охрана труда",
-            "course_name": "Проверка системы рассылки",
-            "valid_until": "30.09.2026",
+            "course_name": "Проверка системы email-напоминаний",
+            "valid_until": "17.02.2027",
             "days_left": 30
         }]
     )
-    return {"success": res}
+    return {"success": success, "message": msg}
 
 static_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
 if not os.path.exists(static_path):
