@@ -106,7 +106,8 @@
         .header-actions {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .theme-toggle-wrapper {
@@ -165,7 +166,7 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 7px 14px;
+            padding: 7px 12px;
             font-size: 13px;
             font-weight: 600;
             border-radius: 5px;
@@ -180,6 +181,14 @@
         }
         .btn-yellow:hover {
             background-color: var(--tmk-yellow-hover);
+        }
+        .btn-green {
+            background-color: #10b981;
+            color: #ffffff;
+            font-weight: 700;
+        }
+        .btn-green:hover {
+            background-color: #059669;
         }
         .btn-dark {
             background-color: #334155;
@@ -554,6 +563,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .alert-box {
@@ -596,6 +607,11 @@
                     </label>
                     <svg class="theme-icon moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                 </div>
+
+                <a href="/api/reports/excel" download class="btn btn-green btn-sm" title="Скачать полный отчет в формате Excel">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span>Экспорт в Excel</span>
+                </a>
 
                 <button onclick="openSettingsModal()" class="btn btn-dark btn-sm">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--tmk-yellow);"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
@@ -768,11 +784,11 @@
         </div>
     </div>
 
-    <!-- Модалка Email -->
+    <!-- Модалка Email (с кнопкой теста еженедельного Excel) -->
     <div id="settings-modal" class="modal-overlay hidden">
         <div class="modal-box">
             <div class="modal-header">
-                <h3>Параметры Email-напоминаний</h3>
+                <h3>Параметры Email-напоминаний и Отчетов</h3>
                 <button onclick="closeSettingsModal()" class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
@@ -796,19 +812,28 @@
                     <input id="set-smtp-pass" type="password" class="form-control" placeholder="16-значный пароль приложения">
                 </div>
                 <div class="form-group">
-                    <label>Email инженера по ОТ (для сводок)</label>
+                    <label>Email инженера по ОТ (для отчетов и сводок)</label>
                     <input id="set-officer-email" type="email" class="form-control" placeholder="chemezov.nick@yandex.ru">
                 </div>
                 <div class="form-group">
-                    <label>Интервалы напоминания (дней)</label>
+                    <label>Интервалы напоминания (дней до окончания)</label>
                     <input id="set-notify-days" type="text" class="form-control" placeholder="30,14,3">
+                </div>
+                <div style="padding:10px; background:var(--table-hover); border-radius:5px; font-size:11px; color:var(--text-muted);">
+                    🕒 <b>Расписание робота:</b> Каждое утро в 07:30 проверка сроков, <b>каждый понедельник в 08:00</b> — высылка Excel-реестра.
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="btn-test-email" onclick="testSendEmail()" class="btn btn-dark btn-sm">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--tmk-yellow);"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                    <span>Тест отправки</span>
-                </button>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button id="btn-test-email" onclick="testSendEmail()" class="btn btn-dark btn-sm" title="Тестовое письмо">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--tmk-yellow);"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        <span>Тест</span>
+                    </button>
+                    <button id="btn-send-weekly-now" onclick="sendWeeklyReportNow()" class="btn btn-green btn-sm" title="Сформировать и отправить Excel-отчет на почту прямо сейчас">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span>Отправить Excel-отчет</span>
+                    </button>
+                </div>
                 <div style="display:flex; gap:6px;">
                     <button onclick="closeSettingsModal()" class="btn btn-outline btn-sm">Отмена</button>
                     <button onclick="saveSettings()" class="btn btn-yellow btn-sm">Сохранить</button>
@@ -1241,7 +1266,35 @@
                 statusBox.innerText = "❌ Ошибка соединения: " + err;
                 statusBox.classList.remove('hidden');
             } finally {
-                btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--tmk-yellow);"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg><span>Тест отправки</span>`;
+                btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--tmk-yellow);"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg><span>Тест</span>`;
+                btn.disabled = false;
+            }
+        }
+
+        async function sendWeeklyReportNow() {
+            const statusBox = document.getElementById('smtp-status-box');
+            statusBox.classList.add('hidden');
+            const btn = document.getElementById('btn-send-weekly-now');
+            btn.innerText = "Формирование Excel и отправка...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_BASE}/reports/send-weekly-now`, { method: "POST" });
+                let data = await res.json();
+                if (data && data.success) {
+                    statusBox.className = "alert-box success";
+                    statusBox.innerHTML = `✅ <b>Отчет отправлен!</b> ${data.message}`;
+                } else {
+                    statusBox.className = "alert-box error";
+                    statusBox.innerHTML = `❌ <b>Ошибка:</b> ${data.message || "Не удалось отправить"}`;
+                }
+                statusBox.classList.remove('hidden');
+            } catch (err) {
+                statusBox.className = "alert-box error";
+                statusBox.innerText = "❌ Ошибка сети: " + err;
+                statusBox.classList.remove('hidden');
+            } finally {
+                btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg><span>Отправить Excel-отчет</span>`;
                 btn.disabled = false;
             }
         }

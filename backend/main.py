@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
+﻿from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -14,8 +14,9 @@ import mimetypes
 
 from database import SessionLocal, Employee, Certification, SystemSettings, init_db, UPLOAD_DIR
 from seed_data import populate_initial_data
-from scheduler import start_scheduler
-from mailer import send_alert_email
+from scheduler import start_scheduler, get_full_report_data
+from mailer import send_alert_email, send_weekly_excel_report
+from excel_generator import generate_safety_excel_report
 
 app = FastAPI(title="TMK Safety & Training Hub")
 
@@ -58,51 +59,16 @@ def on_startup():
 
 @app.get("/api/employees")
 def list_employees(db: Session = Depends(get_db)):
-    employees = db.query(Employee).all()
-    today = date.today()
+    employees_data, _, _ = get_full_report_data(db)
+    # Формируем счетчики для карточек
     result = []
-    
-    for emp in employees:
-        certs = db.query(Certification).filter(Certification.employee_id == emp.id).all()
-        expired_count = 0
-        warning_count = 0
-        
-        cert_list = []
-        for c in certs:
-            days_left = None
-            status = "valid"
-            if c.valid_until:
-                days_left = (c.valid_until - today).days
-                if days_left < 0:
-                    status = "expired"
-                    expired_count += 1
-                elif days_left <= 30:
-                    status = "warning"
-                    warning_count += 1
-            else:
-                status = "permanent"
-
-            cert_list.append({
-                "id": c.id,
-                "category": c.category,
-                "course_name": c.course_name,
-                "pass_date": c.pass_date.strftime("%d.%m.%Y") if c.pass_date else "-",
-                "valid_until": c.valid_until.strftime("%d.%m.%Y") if c.valid_until else "-",
-                "days_left": days_left,
-                "status": status,
-                "file_name": c.file_name or "",
-                "file_display_name": c.file_display_name or ""
-            })
-
+    for emp in employees_data:
+        exp_c = sum(1 for c in emp["certifications"] if c["status"] == "expired")
+        warn_c = sum(1 for c in emp["certifications"] if c["status"] == "warning")
         result.append({
-            "id": emp.id,
-            "full_name": emp.full_name,
-            "position": emp.position,
-            "department": emp.department,
-            "email": emp.email,
-            "expired_count": expired_count,
-            "warning_count": warning_count,
-            "certifications": cert_list
+            **emp,
+            "expired_count": exp_c,
+            "warning_count": warn_c
         })
     return result
 
@@ -249,6 +215,42 @@ def get_file(filename: str):
         media_type=mime or "application/octet-stream",
         headers={"Content-Disposition": f"inline; filename={filename}"}
     )
+
+# Скачивание сформированного Excel прямо в браузере
+@app.get("/api/reports/excel")
+def download_excel_report(db: Session = Depends(get_db)):
+    employees_data, _, _ = get_full_report_data(db)
+    excel_bytes = generate_safety_excel_report(employees_data)
+    today_str = date.today().strftime("%d_%m_%Y")
+    filename = f"TMK_Reestr_Obucheniya_{today_str}.xlsx"
+    return Response(
+        content=excel_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+# Принудительная отправка еженедельного отчета на почту (для теста)
+@app.post("/api/reports/send-weekly-now")
+def send_weekly_report_now(db: Session = Depends(get_db)):
+    settings = db.query(SystemSettings).first()
+    if not settings or not settings.smtp_user or not settings.smtp_pass:
+        return {"success": False, "message": "Сначала сохраните настройки SMTP (логин и пароль приложения)!"}
+    
+    recipient = settings.safety_officer_email or settings.smtp_user
+    employees_data, stats, urgent_items = get_full_report_data(db)
+    excel_bytes = generate_safety_excel_report(employees_data)
+    today_str = date.today().strftime("%d_%m_%Y")
+    filename = f"TMK_Reestr_Obucheniya_{today_str}.xlsx"
+
+    success, msg = send_weekly_excel_report(
+        settings=settings,
+        recipient_email=recipient,
+        excel_bytes=excel_bytes,
+        filename=filename,
+        stats=stats,
+        urgent_items=urgent_items
+    )
+    return {"success": success, "message": msg}
 
 @app.get("/api/settings")
 def get_settings(db: Session = Depends(get_db)):
