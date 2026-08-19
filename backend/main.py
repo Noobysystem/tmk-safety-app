@@ -11,6 +11,7 @@ import sys
 import uuid
 import shutil
 import mimetypes
+import traceback
 
 from database import SessionLocal, Employee, Certification, SystemSettings, init_db, UPLOAD_DIR
 from seed_data import populate_initial_data
@@ -60,7 +61,6 @@ def on_startup():
 @app.get("/api/employees")
 def list_employees(db: Session = Depends(get_db)):
     employees_data, _, _ = get_full_report_data(db)
-    # Формируем счетчики для карточек
     result = []
     for emp in employees_data:
         exp_c = sum(1 for c in emp["certifications"] if c["status"] == "expired")
@@ -216,7 +216,6 @@ def get_file(filename: str):
         headers={"Content-Disposition": f"inline; filename={filename}"}
     )
 
-# Скачивание сформированного Excel прямо в браузере
 @app.get("/api/reports/excel")
 def download_excel_report(db: Session = Depends(get_db)):
     employees_data, _, _ = get_full_report_data(db)
@@ -229,28 +228,31 @@ def download_excel_report(db: Session = Depends(get_db)):
         headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
 
-# Принудительная отправка еженедельного отчета на почту (для теста)
 @app.post("/api/reports/send-weekly-now")
 def send_weekly_report_now(db: Session = Depends(get_db)):
-    settings = db.query(SystemSettings).first()
-    if not settings or not settings.smtp_user or not settings.smtp_pass:
-        return {"success": False, "message": "Сначала сохраните настройки SMTP (логин и пароль приложения)!"}
-    
-    recipient = settings.safety_officer_email or settings.smtp_user
-    employees_data, stats, urgent_items = get_full_report_data(db)
-    excel_bytes = generate_safety_excel_report(employees_data)
-    today_str = date.today().strftime("%d_%m_%Y")
-    filename = f"TMK_Reestr_Obucheniya_{today_str}.xlsx"
+    try:
+        settings = db.query(SystemSettings).first()
+        if not settings or not settings.smtp_user or not settings.smtp_pass:
+            return {"success": False, "message": "Сначала сохраните настройки SMTP (логин и пароль приложения)!"}
+        
+        recipient = settings.safety_officer_email or settings.smtp_user
+        employees_data, stats, urgent_items = get_full_report_data(db)
+        excel_bytes = generate_safety_excel_report(employees_data)
+        today_str = date.today().strftime("%d_%m_%Y")
+        filename = f"TMK_Reestr_Obucheniya_{today_str}.xlsx"
 
-    success, msg = send_weekly_excel_report(
-        settings=settings,
-        recipient_email=recipient,
-        excel_bytes=excel_bytes,
-        filename=filename,
-        stats=stats,
-        urgent_items=urgent_items
-    )
-    return {"success": success, "message": msg}
+        success, msg = send_weekly_excel_report(
+            settings=settings,
+            recipient_email=recipient,
+            excel_bytes=excel_bytes,
+            filename=filename,
+            stats=stats,
+            urgent_items=urgent_items
+        )
+        return {"success": success, "message": msg}
+    except Exception as e:
+        traceback.print_exc()
+        return {"success": False, "message": f"Ошибка сервера: {str(e)}"}
 
 @app.get("/api/settings")
 def get_settings(db: Session = Depends(get_db)):
@@ -275,36 +277,40 @@ def update_settings(data: SettingsSchema, db: Session = Depends(get_db)):
 
 @app.post("/api/settings/test-email")
 def test_email(test_data: Optional[SettingsSchema] = None, db: Session = Depends(get_db)):
-    s = db.query(SystemSettings).first()
-    if not s:
-        s = SystemSettings()
-        db.add(s)
+    try:
+        s = db.query(SystemSettings).first()
+        if not s:
+            s = SystemSettings()
+            db.add(s)
 
-    if test_data:
-        s.smtp_host = (test_data.smtp_host or "smtp.yandex.ru").strip()
-        s.smtp_port = int(test_data.smtp_port or 465)
-        s.smtp_user = (test_data.smtp_user or "").strip()
-        s.smtp_pass = (test_data.smtp_pass or "").strip().replace(" ", "")
-        s.sender_email = (test_data.sender_email or s.smtp_user).strip()
-        s.safety_officer_email = (test_data.safety_officer_email or s.smtp_user).strip()
-        s.notify_days = (test_data.notify_days or "30,14,3").strip()
-        db.commit()
+        if test_data:
+            s.smtp_host = (test_data.smtp_host or "smtp.yandex.ru").strip()
+            s.smtp_port = int(test_data.smtp_port or 465)
+            s.smtp_user = (test_data.smtp_user or "").strip()
+            s.smtp_pass = (test_data.smtp_pass or "").strip().replace(" ", "")
+            s.sender_email = (test_data.sender_email or s.smtp_user).strip()
+            s.safety_officer_email = (test_data.safety_officer_email or s.smtp_user).strip()
+            s.notify_days = (test_data.notify_days or "30,14,3").strip()
+            db.commit()
 
-    cfg = s
-    recipient = cfg.safety_officer_email if cfg.safety_officer_email else cfg.smtp_user
-    success, msg = send_alert_email(
-        settings=cfg,
-        recipient_email=recipient,
-        subject="🧪 Тестовое оповещение из системы обучения ТМК",
-        items=[{
-            "employee_name": "Чемезов Н. А.",
-            "category": "Охрана труда",
-            "course_name": "Проверка системы email-напоминаний",
-            "valid_until": "17.02.2027",
-            "days_left": 30
-        }]
-    )
-    return {"success": success, "message": msg}
+        cfg = s
+        recipient = cfg.safety_officer_email if cfg.safety_officer_email else cfg.smtp_user
+        success, msg = send_alert_email(
+            settings=cfg,
+            recipient_email=recipient,
+            subject="🧪 Тестовое оповещение из системы обучения ТМК",
+            items=[{
+                "employee_name": "Чемезов Н. А.",
+                "category": "Охрана труда",
+                "course_name": "Проверка системы email-напоминаний",
+                "valid_until": "17.02.2027",
+                "days_left": 30
+            }]
+        )
+        return {"success": success, "message": msg}
+    except Exception as e:
+        traceback.print_exc()
+        return {"success": False, "message": f"Ошибка сервера: {str(e)}"}
 
 if getattr(sys, 'frozen', False):
     frontend_dir = os.path.join(sys._MEIPASS, "frontend")

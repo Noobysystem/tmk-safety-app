@@ -1,6 +1,7 @@
 ﻿import smtplib
 import ssl
 import traceback
+import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
@@ -111,7 +112,7 @@ def send_weekly_excel_report(settings, recipient_email: str, excel_bytes: bytes,
     msg["Subject"] = Header(subject, "utf-8")
 
     urgent_rows = ""
-    for it in urgent_items[:15]: # топ 15 срочных
+    for it in urgent_items[:15]:
         color = "#ef4444" if it["status"] == "expired" else "#f59e0b"
         st_text = "ПРОСРОЧЕНО" if it["status"] == "expired" else f"Осталось {it['days_left']} дн."
         urgent_rows += f"""
@@ -135,7 +136,7 @@ def send_weekly_excel_report(settings, recipient_email: str, excel_bytes: bytes,
             </div>
             
             <div style="padding: 20px;">
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <div style="margin-bottom: 20px;">
                     <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 13px;">
                         <tr>
                             <td style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:6px;">
@@ -184,7 +185,6 @@ def send_weekly_excel_report(settings, recipient_email: str, excel_bytes: bytes,
     """
     msg.attach(MIMEText(html, "html", "utf-8"))
 
-    # Прикрепляем Excel
     attachment = MIMEApplication(excel_bytes, Name=filename)
     attachment['Content-Disposition'] = f'attachment; filename="{filename}"'
     msg.attach(attachment)
