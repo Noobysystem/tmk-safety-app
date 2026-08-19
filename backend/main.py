@@ -1,11 +1,13 @@
-﻿from fastapi import FastAPI, Depends, HTTPException
+﻿from fastapi import FastAPI, Depends, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import date, datetime
 import os
+import sys
 
 from database import SessionLocal, Employee, Certification, SystemSettings, init_db
 from seed_data import populate_initial_data
@@ -231,9 +233,19 @@ def test_email(test_data: Optional[SettingsSchema] = None, db: Session = Depends
     )
     return {"success": success, "message": msg}
 
-static_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
-if not os.path.exists(static_path):
-    static_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "frontend"))
+# Отдача главной страницы БЕЗ кэширования браузером
+if getattr(sys, 'frozen', False):
+    frontend_dir = os.path.join(sys._MEIPASS, "frontend")
+else:
+    frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
 
-if os.path.exists(static_path):
-    app.mount("/", StaticFiles(directory=static_path, html=True), name="frontend")
+if not os.path.exists(frontend_dir):
+    frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "frontend"))
+
+@app.get("/")
+def serve_index():
+    index_file = os.path.join(frontend_dir, "index.html")
+    return FileResponse(index_file, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
+if os.path.exists(frontend_dir):
+    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
