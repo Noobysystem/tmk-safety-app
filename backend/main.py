@@ -41,15 +41,6 @@ class EmployeeSchema(BaseModel):
     department: Optional[str] = ""
     email: Optional[str] = ""
 
-class CertSchema(BaseModel):
-    id: Optional[int] = None
-    employee_id: int
-    category: str
-    course_name: str
-    pass_date: Optional[str] = None
-    valid_until: Optional[str] = None
-    notes: Optional[str] = ""
-
 class SettingsSchema(BaseModel):
     smtp_host: Optional[str] = "smtp.yandex.ru"
     smtp_port: Optional[int] = 465
@@ -247,7 +238,6 @@ def delete_cert_file(cert_id: int, db: Session = Depends(get_db)):
         db.commit()
     return {"status": "ok"}
 
-# Отдача файла для просмотра/скачивания
 @app.get("/api/files/{filename}")
 def get_file(filename: str):
     fpath = os.path.join(UPLOAD_DIR, filename)

@@ -53,7 +53,6 @@ class SystemSettings(Base):
 
 def init_db():
     Base.metadata.create_all(bind=engine)
-    # Мягкая миграция для добавления колонок файлов, если база уже создана
     with engine.connect() as conn:
         try:
             conn.execute(text("ALTER TABLE certifications ADD COLUMN file_name VARCHAR DEFAULT ''"))
