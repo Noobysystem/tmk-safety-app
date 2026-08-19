@@ -11,8 +11,41 @@
             --tmk-dark: #0f172a;
             --tmk-header: #1e293b;
             --bg-page: #f1f5f9;
+            --card-bg: #ffffff;
             --text-main: #1e293b;
+            --text-muted: #64748b;
             --border-color: #cbd5e1;
+            --table-border: #e2e8f0;
+            --table-hover: #f8fafc;
+            --table-head-bg: #fbbf24;
+            --table-head-text: #1e293b;
+            --modal-bg: #ffffff;
+            --modal-footer-bg: #f8fafc;
+            --input-bg: #ffffff;
+            --input-border: #cbd5e1;
+            --input-text: #1e293b;
+            --kpi-num: #1e293b;
+        }
+
+        /* Темная тема ТМК */
+        [data-theme="dark"] {
+            --bg-page: #0b0f19;
+            --card-bg: #151e2e;
+            --tmk-dark: #090d16;
+            --tmk-header: #0f172a;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #27354a;
+            --table-border: #27354a;
+            --table-hover: #1e293b;
+            --table-head-bg: #d97706;
+            --table-head-text: #ffffff;
+            --modal-bg: #151e2e;
+            --modal-footer-bg: #0f172a;
+            --input-bg: #090d16;
+            --input-border: #334155;
+            --input-text: #f8fafc;
+            --kpi-num: #f8fafc;
         }
 
         * {
@@ -20,6 +53,7 @@
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
         }
 
         body {
@@ -35,12 +69,12 @@
             background-color: var(--tmk-dark);
             color: #ffffff;
             border-bottom: 4px solid var(--tmk-yellow);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.25);
         }
         .header-container {
             max-width: 1300px;
             margin: 0 auto;
-            padding: 14px 20px;
+            padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -73,7 +107,61 @@
         }
         .header-actions {
             display: flex;
-            gap: 8px;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Ползунок темы */
+        .theme-toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 4px 8px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .theme-icon {
+            width: 15px;
+            height: 15px;
+            color: #94a3b8;
+        }
+        .theme-switch {
+            position: relative;
+            display: inline-block;
+            width: 38px;
+            height: 20px;
+        }
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: #475569;
+            transition: .3s;
+            border-radius: 20px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #ffffff;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--tmk-yellow);
+        }
+        input:checked + .slider:before {
+            transform: translateX(18px);
+            background-color: #000000;
         }
 
         /* Кнопки */
@@ -87,7 +175,7 @@
             border-radius: 5px;
             border: 1px solid transparent;
             cursor: pointer;
-            transition: all 0.15s ease;
+            text-decoration: none;
         }
         .btn-yellow {
             background-color: var(--tmk-yellow);
@@ -106,19 +194,18 @@
             background-color: #475569;
         }
         .btn-outline {
-            background-color: #ffffff;
-            color: #334155;
-            border-color: #cbd5e1;
+            background-color: var(--card-bg);
+            color: var(--text-main);
+            border-color: var(--border-color);
         }
         .btn-outline:hover {
-            background-color: #f1f5f9;
+            background-color: var(--table-hover);
         }
         .btn-sm {
             padding: 5px 10px;
             font-size: 12px;
         }
 
-        /* Контейнер */
         main {
             max-width: 1300px;
             margin: 0 auto;
@@ -135,11 +222,14 @@
             margin-bottom: 20px;
         }
         .kpi-card {
-            background: #ffffff;
+            background: var(--card-bg);
             padding: 16px 20px;
             border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             border-left: 4px solid #64748b;
+            border-top: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -151,29 +241,31 @@
             font-size: 11px;
             text-transform: uppercase;
             font-weight: 700;
-            color: #64748b;
+            color: var(--text-muted);
             letter-spacing: 0.5px;
         }
         .kpi-value {
             font-size: 26px;
             font-weight: 900;
             margin-top: 4px;
+            color: var(--kpi-num);
         }
-        .kpi-card.green .kpi-value { color: #059669; }
-        .kpi-card.yellow .kpi-value { color: #d97706; }
-        .kpi-card.red .kpi-value { color: #dc2626; }
+        .kpi-card.green .kpi-value { color: #10b981; }
+        .kpi-card.yellow .kpi-value { color: #f59e0b; }
+        .kpi-card.red .kpi-value { color: #ef4444; }
         .kpi-icon {
             width: 30px;
             height: 30px;
             opacity: 0.25;
         }
 
-        /* Панель поиска и фильтров */
+        /* Поиск и фильтры */
         .toolbar {
-            background: #ffffff;
+            background: var(--card-bg);
             padding: 14px 18px;
             border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -190,7 +282,9 @@
             width: 100%;
             padding: 8px 12px 8px 34px;
             font-size: 13px;
-            border: 1px solid var(--border-color);
+            background-color: var(--input-bg);
+            color: var(--input-text);
+            border: 1px solid var(--input-border);
             border-radius: 5px;
             outline: none;
         }
@@ -205,7 +299,7 @@
             transform: translateY(-50%);
             width: 16px;
             height: 16px;
-            opacity: 0.4;
+            color: var(--text-muted);
         }
         .filter-buttons {
             display: flex;
@@ -215,10 +309,10 @@
 
         /* Карточка сотрудника */
         .emp-card {
-            background: #ffffff;
+            background: var(--card-bg);
             border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
             overflow: hidden;
             margin-bottom: 24px;
         }
@@ -277,6 +371,16 @@
             color: #92400e;
             border: 1px solid #fde68a;
         }
+        [data-theme="dark"] .badge-table-exp {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+        [data-theme="dark"] .badge-table-warn {
+            background-color: rgba(245, 158, 11, 0.2);
+            color: #fde047;
+            border-color: rgba(245, 158, 11, 0.4);
+        }
 
         .icon-btn {
             background: none;
@@ -286,9 +390,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #94a3b8;
+            color: var(--text-muted);
             border-radius: 4px;
-            transition: color 0.15s;
         }
         .icon-btn:hover {
             color: var(--tmk-yellow);
@@ -311,11 +414,12 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
         }
         table.cert-table thead tr {
-            background-color: #fbbf24;
-            color: #1e293b;
+            background-color: var(--table-head-bg);
+            color: var(--table-head-text);
             font-weight: 800;
             text-transform: uppercase;
             font-size: 11px;
@@ -324,22 +428,22 @@
         }
         table.cert-table th, table.cert-table td {
             padding: 8px 12px;
-            border-right: 1px solid #e2e8f0;
-            border-bottom: 1px solid #e2e8f0;
+            border-right: 1px solid var(--table-border);
+            border-bottom: 1px solid var(--table-border);
         }
         table.cert-table th:last-child, table.cert-table td:last-child {
             border-right: none;
         }
         table.cert-table tbody tr:hover {
-            background-color: #f8fafc;
+            background-color: var(--table-hover);
         }
         table.cert-table tr.row-expired {
-            background-color: #fff1f2;
-            color: #9f1239;
+            background-color: rgba(239, 68, 68, 0.08);
+            color: #ef4444;
         }
         table.cert-table tr.row-warning {
-            background-color: #fffbeb;
-            color: #92400e;
+            background-color: rgba(245, 158, 11, 0.08);
+            color: #f59e0b;
         }
         .text-center { text-align: center; }
         .font-bold { font-weight: 700; }
@@ -348,7 +452,7 @@
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.65);
+            background: rgba(0, 0, 0, 0.7);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -359,13 +463,16 @@
             display: none !important;
         }
         .modal-box {
-            background: #ffffff;
+            background: var(--modal-bg);
             border-radius: 8px;
             max-width: 480px;
             width: 100%;
             overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             border-top: 4px solid var(--tmk-yellow);
+            border-left: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
         }
         .modal-header {
             background: var(--tmk-dark);
@@ -402,15 +509,17 @@
         }
         .form-group label {
             font-weight: 700;
-            color: #334155;
+            color: var(--text-main);
             font-size: 12px;
         }
         .form-control {
             padding: 8px 10px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid var(--input-border);
             border-radius: 5px;
             font-size: 13px;
             outline: none;
+            background-color: var(--input-bg);
+            color: var(--input-text);
         }
         .form-control:focus {
             border-color: var(--tmk-yellow);
@@ -422,9 +531,9 @@
             gap: 10px;
         }
         .modal-footer {
-            background: #f8fafc;
+            background: var(--modal-footer-bg);
             padding: 12px 18px;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -437,20 +546,21 @@
             font-weight: 600;
         }
         .alert-box.success {
-            background-color: #d1fae5;
-            color: #065f46;
-            border: 1px solid #a7f3d0;
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
         .alert-box.error {
-            background-color: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
         }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
+    <!-- Шапка -->
     <header>
         <div class="header-container">
             <div class="logo-box">
@@ -460,13 +570,24 @@
                     <p>Охрана труда • Промбезопасность • Электробезопасность • Медосмотры</p>
                 </div>
             </div>
+            
             <div class="header-actions">
+                <!-- Ползунок темы -->
+                <div class="theme-toggle-wrapper" title="Переключить тему">
+                    <svg class="theme-icon sun active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <label class="theme-switch">
+                        <input type="checkbox" id="theme-checkbox" onchange="toggleTheme()">
+                        <span class="slider"></span>
+                    </label>
+                    <svg class="theme-icon moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </div>
+
                 <button onclick="openSettingsModal()" class="btn btn-dark btn-sm">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--tmk-yellow);"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--tmk-yellow);"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                     <span>Настройка Email-бота</span>
                 </button>
                 <button onclick="fetchData()" class="btn btn-yellow btn-sm">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
                     <span>Обновить</span>
                 </button>
             </div>
@@ -655,6 +776,31 @@
         let employeesData = [];
         let currentFilter = 'all';
 
+        function initTheme() {
+            const savedTheme = localStorage.getItem('tmk_theme') || 'light';
+            const checkbox = document.getElementById('theme-checkbox');
+            if (savedTheme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                if (checkbox) checkbox.checked = true;
+            } else {
+                document.body.removeAttribute('data-theme');
+                if (checkbox) checkbox.checked = false;
+            }
+        }
+
+        function toggleTheme() {
+            const checkbox = document.getElementById('theme-checkbox');
+            if (checkbox.checked) {
+                document.body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('tmk_theme', 'dark');
+            } else {
+                document.body.removeAttribute('data-theme');
+                localStorage.setItem('tmk_theme', 'light');
+            }
+        }
+
+        initTheme();
+
         async function fetchData() {
             try {
                 const res = await fetch(`${API_BASE}/employees`);
@@ -682,8 +828,8 @@
 
             if (employeesData.length === 0) {
                 container.innerHTML = `
-                    <div style="background:#fff; padding:40px; text-align:center; border-radius:8px; border:1px solid #e2e8f0;">
-                        <p style="color:#64748b; font-weight:600; font-size:15px;">Список сотрудников пуст</p>
+                    <div style="background:var(--card-bg); padding:40px; text-align:center; border-radius:8px; border:1px solid var(--border-color);">
+                        <p style="color:var(--text-muted); font-weight:600; font-size:15px;">Список сотрудников пуст</p>
                         <button onclick="openEmployeeModal()" class="btn btn-yellow btn-sm" style="margin-top:10px;">+ Добавить сотрудника</button>
                     </div>
                 `;
@@ -736,7 +882,7 @@
                 `;
 
                 if (Object.keys(categories).length === 0) {
-                    cardHtml += `<p style="font-size:12px; color:#94a3b8; font-style:italic;">Нет записей об обучении.</p>`;
+                    cardHtml += `<p style="font-size:12px; color:var(--text-muted); font-style:italic;">Нет записей об обучении.</p>`;
                 }
 
                 for (const [catName, certs] of Object.entries(categories)) {
