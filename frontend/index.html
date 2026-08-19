@@ -27,7 +27,6 @@
             --kpi-num: #1e293b;
         }
 
-        /* Темная тема ТМК */
         [data-theme="dark"] {
             --bg-page: #0b0f19;
             --card-bg: #151e2e;
@@ -64,7 +63,6 @@
             flex-direction: column;
         }
 
-        /* Шапка */
         header {
             background-color: var(--tmk-dark);
             color: #ffffff;
@@ -111,7 +109,6 @@
             gap: 10px;
         }
 
-        /* Ползунок темы */
         .theme-toggle-wrapper {
             display: flex;
             align-items: center;
@@ -164,7 +161,6 @@
             background-color: #000000;
         }
 
-        /* Кнопки */
         .btn {
             display: inline-flex;
             align-items: center;
@@ -214,7 +210,6 @@
             flex: 1;
         }
 
-        /* KPI карточки */
         .kpi-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -259,7 +254,6 @@
             opacity: 0.25;
         }
 
-        /* Поиск и фильтры */
         .toolbar {
             background: var(--card-bg);
             padding: 14px 18px;
@@ -307,7 +301,6 @@
             flex-wrap: wrap;
         }
 
-        /* Карточка сотрудника */
         .emp-card {
             background: var(--card-bg);
             border-radius: 8px;
@@ -382,6 +375,27 @@
             border-color: rgba(245, 158, 11, 0.4);
         }
 
+        /* Бейдж прикрепленного файла протокола */
+        .doc-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--tmk-yellow);
+            border: 1px solid var(--tmk-yellow);
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+        .doc-chip:hover {
+            background: var(--tmk-yellow);
+            color: #000000;
+        }
+
         .icon-btn {
             background: none;
             border: none;
@@ -400,7 +414,6 @@
             color: #ef4444;
         }
 
-        /* Таблица обучения */
         .emp-body {
             padding: 16px 20px;
             display: flex;
@@ -448,7 +461,6 @@
         .text-center { text-align: center; }
         .font-bold { font-weight: 700; }
 
-        /* Модальные окна */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -473,6 +485,12 @@
             border-left: 1px solid var(--border-color);
             border-right: 1px solid var(--border-color);
             border-bottom: 1px solid var(--border-color);
+        }
+        .modal-box.modal-large {
+            max-width: 900px;
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
         }
         .modal-header {
             background: var(--tmk-dark);
@@ -560,7 +578,6 @@
 </head>
 <body>
 
-    <!-- Шапка -->
     <header>
         <div class="header-container">
             <div class="logo-box">
@@ -572,7 +589,6 @@
             </div>
             
             <div class="header-actions">
-                <!-- Ползунок темы -->
                 <div class="theme-toggle-wrapper" title="Переключить тему">
                     <svg class="theme-icon sun active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
                     <label class="theme-switch">
@@ -583,11 +599,11 @@
                 </div>
 
                 <button onclick="openSettingsModal()" class="btn btn-dark btn-sm">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--tmk-yellow);"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--tmk-yellow);"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                     <span>Настройка Email-бота</span>
                 </button>
                 <button onclick="fetchData()" class="btn btn-yellow btn-sm">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
                     <span>Обновить</span>
                 </button>
             </div>
@@ -679,7 +695,7 @@
         </div>
     </div>
 
-    <!-- Модалка Обучения -->
+    <!-- Модалка Обучения (с прикреплением файла) -->
     <div id="cert-modal" class="modal-overlay hidden">
         <div class="modal-box">
             <div class="modal-header">
@@ -714,10 +730,41 @@
                         <input id="cert-valid-until" type="text" class="form-control" placeholder="20.02.2029 или -">
                     </div>
                 </div>
+                <div class="form-group">
+                    <label>Прикрепить протокол / скан (PDF, PNG, JPG)</label>
+                    <input id="cert-file" type="file" accept=".pdf,image/*" class="form-control">
+                    <div id="cert-current-file" class="hidden" style="margin-top:4px; font-size:11px; color:var(--tmk-yellow); display:flex; justify-content:space-between; align-items:center;">
+                        <span id="cert-current-filename"></span>
+                        <button type="button" onclick="deleteCurrentCertFile()" style="color:#ef4444; background:none; border:none; cursor:pointer; font-weight:bold;">Удалить файл</button>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button onclick="closeCertModal()" class="btn btn-outline btn-sm">Отмена</button>
                 <button onclick="saveCertRecord()" class="btn btn-yellow btn-sm">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка Предпросмотра Протокола / Файла -->
+    <div id="preview-modal" class="modal-overlay hidden">
+        <div class="modal-box modal-large">
+            <div class="modal-header">
+                <h3 id="preview-modal-title">Просмотр протокола</h3>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <a id="preview-download-btn" href="#" download class="btn btn-yellow btn-sm" style="padding:3px 8px; font-size:11px;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span>Скачать</span>
+                    </a>
+                    <a id="preview-tab-btn" href="#" target="_blank" class="btn btn-dark btn-sm" style="padding:3px 8px; font-size:11px;">
+                        <span>Во весь экран</span>
+                    </a>
+                    <button onclick="closePreviewModal()" class="modal-close">&times;</button>
+                </div>
+            </div>
+            <div style="flex:1; background:#0b0f19; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;">
+                <iframe id="preview-frame" style="width:100%; height:100%; border:none; display:none;"></iframe>
+                <img id="preview-img" style="max-width:100%; max-height:100%; object-fit:contain; display:none;" />
             </div>
         </div>
     </div>
@@ -891,9 +938,10 @@
                             <table class="cert-table">
                                 <thead>
                                     <tr>
-                                        <th style="width:50%; text-align:left;">${catName}</th>
-                                        <th style="width:25%; text-align:center;">Дата прохождения</th>
-                                        <th style="width:25%; text-align:center;">Действительно до</th>
+                                        <th style="width:45%; text-align:left;">${catName}</th>
+                                        <th style="width:20%; text-align:center;">Дата сдачи</th>
+                                        <th style="width:20%; text-align:center;">Действительно до</th>
+                                        <th style="width:15%; text-align:center;">Протокол / Скан</th>
                                         <th style="width:60px; text-align:center;">Действия</th>
                                     </tr>
                                 </thead>
@@ -912,13 +960,29 @@
                             badge = `<span class="badge badge-table-warn" style="margin-left:6px;">Осталось ${c.days_left} дн.</span>`;
                         }
 
+                        let docHtml = `<span style="color:var(--text-muted); font-size:11px;">—</span>`;
+                        if (c.file_name) {
+                            const isPdf = c.file_name.toLowerCase().endsWith(".pdf");
+                            const iconSvg = isPdf
+                                ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`
+                                : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`;
+                            
+                            docHtml = `
+                                <button onclick="openPreviewModal('${c.file_name}', '${c.file_display_name || c.course_name}')" class="doc-chip" title="Нажмите для просмотра или скачивания">
+                                    ${iconSvg}
+                                    <span>${isPdf ? 'PDF' : 'Скан'}</span>
+                                </button>
+                            `;
+                        }
+
                         cardHtml += `
                             <tr class="${rowClass}">
                                 <td style="font-weight:600;">${c.course_name} ${badge}</td>
                                 <td class="text-center">${c.pass_date}</td>
                                 <td class="text-center font-bold">${c.valid_until}</td>
+                                <td class="text-center">${docHtml}</td>
                                 <td class="text-center" style="display:flex; justify-content:center; gap:4px;">
-                                    <button onclick="editCertRecord(${c.id}, ${emp.id}, '${c.category}', '${c.course_name}', '${c.pass_date}', '${c.valid_until}')" class="icon-btn" title="Редактировать">
+                                    <button onclick="editCertRecord(${c.id}, ${emp.id}, '${c.category}', '${c.course_name}', '${c.pass_date}', '${c.valid_until}', '${c.file_name}', '${c.file_display_name}')" class="icon-btn" title="Редактировать">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                                     </button>
                                     <button onclick="deleteCertRecord(${c.id})" class="icon-btn danger" title="Удалить">
@@ -942,6 +1006,7 @@
             document.getElementById('stat-expired-certs').innerText = totalExpired;
         }
 
+        // --- Модалка Сотрудника ---
         function openEmployeeModal(id = null, name = '', pos = '', dept = '', email = '') {
             document.getElementById('emp-modal-title').innerText = id ? "Редактировать сотрудника" : "Добавить сотрудника";
             document.getElementById('emp-id').value = id || '';
@@ -981,6 +1046,7 @@
             fetchData();
         }
 
+        // --- Модалка Обучения (с файлами) ---
         function openAddCertModal() {
             if (employeesData.length === 0) {
                 alert("Сначала добавьте сотрудника!");
@@ -992,12 +1058,15 @@
             document.getElementById('cert-course-name').value = "";
             document.getElementById('cert-pass-date').value = "";
             document.getElementById('cert-valid-until').value = "";
+            document.getElementById('cert-file').value = "";
+            document.getElementById('cert-current-file').classList.add('hidden');
             
             const sel = document.getElementById('cert-employee-id');
             sel.innerHTML = employeesData.map(e => `<option value="${e.id}">${e.full_name}</option>`).join('');
             document.getElementById('cert-modal').classList.remove('hidden');
         }
-        function editCertRecord(id, empId, cat, name, pDate, vDate) {
+
+        function editCertRecord(id, empId, cat, name, pDate, vDate, fileName, fileDisplay) {
             document.getElementById('cert-modal-title').innerText = "Редактировать запись";
             document.getElementById('cert-id').value = id;
             
@@ -1008,34 +1077,93 @@
             document.getElementById('cert-course-name').value = name;
             document.getElementById('cert-pass-date').value = pDate;
             document.getElementById('cert-valid-until').value = vDate;
+            document.getElementById('cert-file').value = "";
+
+            const curBox = document.getElementById('cert-current-file');
+            if (fileName && fileName !== 'null' && fileName !== '') {
+                document.getElementById('cert-current-filename').innerText = "Прикреплен: " + (fileDisplay || fileName);
+                curBox.classList.remove('hidden');
+            } else {
+                curBox.classList.add('hidden');
+            }
+            
             document.getElementById('cert-modal').classList.remove('hidden');
         }
+
         function closeCertModal() {
             document.getElementById('cert-modal').classList.add('hidden');
         }
+
+        async function deleteCurrentCertFile() {
+            const certId = document.getElementById('cert-id').value;
+            if (!certId) return;
+            if (!confirm("Удалить прикрепленный файл протокола?")) return;
+            await fetch(`${API_BASE}/certifications/${certId}/file`, { method: "DELETE" });
+            document.getElementById('cert-current-file').classList.add('hidden');
+            fetchData();
+        }
+
         async function saveCertRecord() {
-            const body = {
-                id: document.getElementById('cert-id').value ? parseInt(document.getElementById('cert-id').value) : null,
-                employee_id: parseInt(document.getElementById('cert-employee-id').value),
-                category: document.getElementById('cert-category').value,
-                course_name: document.getElementById('cert-course-name').value,
-                pass_date: document.getElementById('cert-pass-date').value,
-                valid_until: document.getElementById('cert-valid-until').value
-            };
+            const certId = document.getElementById('cert-id').value;
+            const formData = new FormData();
+            if (certId) formData.append("id", certId);
+            formData.append("employee_id", document.getElementById('cert-employee-id').value);
+            formData.append("category", document.getElementById('cert-category').value);
+            formData.append("course_name", document.getElementById('cert-course-name').value.trim());
+            formData.append("pass_date", document.getElementById('cert-pass-date').value.trim());
+            formData.append("valid_until", document.getElementById('cert-valid-until').value.trim());
+
+            const fileInput = document.getElementById('cert-file');
+            if (fileInput.files.length > 0) {
+                formData.append("file", fileInput.files[0]);
+            }
+
             await fetch(`${API_BASE}/certifications`, {
                 method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(body)
+                body: formData
             });
             closeCertModal();
             fetchData();
         }
+
         async function deleteCertRecord(id) {
             if (!confirm("Удалить эту запись?")) return;
             await fetch(`${API_BASE}/certifications/${id}`, { method: "DELETE" });
             fetchData();
         }
 
+        // --- Модалка Предпросмотра файлов ---
+        function openPreviewModal(fileName, displayName) {
+            const url = `${API_BASE}/files/${fileName}`;
+            const isPdf = fileName.toLowerCase().endsWith(".pdf");
+
+            document.getElementById('preview-modal-title').innerText = "Протокол: " + displayName;
+            document.getElementById('preview-download-btn').href = url;
+            document.getElementById('preview-tab-btn').href = url;
+
+            const frame = document.getElementById('preview-frame');
+            const img = document.getElementById('preview-img');
+
+            if (isPdf) {
+                frame.src = url;
+                frame.style.display = "block";
+                img.style.display = "none";
+            } else {
+                img.src = url;
+                img.style.display = "block";
+                frame.style.display = "none";
+            }
+
+            document.getElementById('preview-modal').classList.remove('hidden');
+        }
+
+        function closePreviewModal() {
+            document.getElementById('preview-modal').classList.add('hidden');
+            document.getElementById('preview-frame').src = "";
+            document.getElementById('preview-img').src = "";
+        }
+
+        // --- Настройки Email ---
         function getFormSettings() {
             return {
                 smtp_host: document.getElementById('set-smtp-host').value.trim() || "smtp.yandex.ru",

@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI, Depends, HTTPException, Response
+﻿from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -8,8 +8,11 @@ from typing import List, Optional
 from datetime import date, datetime
 import os
 import sys
+import uuid
+import shutil
+import mimetypes
 
-from database import SessionLocal, Employee, Certification, SystemSettings, init_db
+from database import SessionLocal, Employee, Certification, SystemSettings, init_db, UPLOAD_DIR
 from seed_data import populate_initial_data
 from scheduler import start_scheduler
 from mailer import send_alert_email
@@ -95,7 +98,9 @@ def list_employees(db: Session = Depends(get_db)):
                 "pass_date": c.pass_date.strftime("%d.%m.%Y") if c.pass_date else "-",
                 "valid_until": c.valid_until.strftime("%d.%m.%Y") if c.valid_until else "-",
                 "days_left": days_left,
-                "status": status
+                "status": status,
+                "file_name": c.file_name or "",
+                "file_display_name": c.file_display_name or ""
             })
 
         result.append({
@@ -135,36 +140,77 @@ def save_employee(emp_data: EmployeeSchema, db: Session = Depends(get_db)):
 def delete_employee(emp_id: int, db: Session = Depends(get_db)):
     emp = db.query(Employee).filter(Employee.id == emp_id).first()
     if emp:
+        certs = db.query(Certification).filter(Certification.employee_id == emp_id).all()
+        for c in certs:
+            if c.file_name:
+                fpath = os.path.join(UPLOAD_DIR, c.file_name)
+                if os.path.exists(fpath):
+                    try:
+                        os.remove(fpath)
+                    except Exception:
+                        pass
         db.query(Certification).filter(Certification.employee_id == emp_id).delete()
         db.delete(emp)
         db.commit()
     return {"status": "ok"}
 
 @app.post("/api/certifications")
-def save_certification(cert_data: CertSchema, db: Session = Depends(get_db)):
+def save_certification(
+    id: Optional[int] = Form(None),
+    employee_id: int = Form(...),
+    category: str = Form(...),
+    course_name: str = Form(...),
+    pass_date: Optional[str] = Form(None),
+    valid_until: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db)
+):
     p_date = None
-    if cert_data.pass_date and cert_data.pass_date.strip() not in ["-", ""]:
-        p_date = datetime.strptime(cert_data.pass_date.strip(), "%d.%m.%Y").date()
+    if pass_date and pass_date.strip() not in ["-", ""]:
+        p_date = datetime.strptime(pass_date.strip(), "%d.%m.%Y").date()
     
     v_date = None
-    if cert_data.valid_until and cert_data.valid_until.strip() not in ["-", ""]:
-        v_date = datetime.strptime(cert_data.valid_until.strip(), "%d.%m.%Y").date()
+    if valid_until and valid_until.strip() not in ["-", ""]:
+        v_date = datetime.strptime(valid_until.strip(), "%d.%m.%Y").date()
 
-    if cert_data.id:
-        cert = db.query(Certification).filter(Certification.id == cert_data.id).first()
+    saved_file_name = None
+    orig_file_name = None
+
+    if file and file.filename:
+        ext = os.path.splitext(file.filename)[1].lower()
+        saved_file_name = f"{uuid.uuid4().hex}{ext}"
+        orig_file_name = file.filename
+        file_path = os.path.join(UPLOAD_DIR, saved_file_name)
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+    if id:
+        cert = db.query(Certification).filter(Certification.id == id).first()
         if not cert:
             raise HTTPException(status_code=404, detail="Запись не найдена")
-        cert.category = cert_data.category
-        cert.course_name = cert_data.course_name
+        cert.category = category
+        cert.course_name = course_name
         cert.pass_date = p_date
         cert.valid_until = v_date
+        if saved_file_name:
+            if cert.file_name:
+                old_p = os.path.join(UPLOAD_DIR, cert.file_name)
+                if os.path.exists(old_p):
+                    try:
+                        os.remove(old_p)
+                    except Exception:
+                        pass
+            cert.file_name = saved_file_name
+            cert.file_display_name = orig_file_name
     else:
         cert = Certification(
-            employee_id=cert_data.employee_id,
-            category=cert_data.category,
-            course_name=cert_data.course_name,
+            employee_id=employee_id,
+            category=category,
+            course_name=course_name,
             pass_date=p_date,
-            valid_until=v_date
+            valid_until=v_date,
+            file_name=saved_file_name or "",
+            file_display_name=orig_file_name or ""
         )
         db.add(cert)
     
@@ -175,9 +221,44 @@ def save_certification(cert_data: CertSchema, db: Session = Depends(get_db)):
 def delete_cert(cert_id: int, db: Session = Depends(get_db)):
     c = db.query(Certification).filter(Certification.id == cert_id).first()
     if c:
+        if c.file_name:
+            p = os.path.join(UPLOAD_DIR, c.file_name)
+            if os.path.exists(p):
+                try:
+                    os.remove(p)
+                except Exception:
+                    pass
         db.delete(c)
         db.commit()
     return {"status": "ok"}
+
+@app.delete("/api/certifications/{cert_id}/file")
+def delete_cert_file(cert_id: int, db: Session = Depends(get_db)):
+    c = db.query(Certification).filter(Certification.id == cert_id).first()
+    if c and c.file_name:
+        p = os.path.join(UPLOAD_DIR, c.file_name)
+        if os.path.exists(p):
+            try:
+                os.remove(p)
+            except Exception:
+                pass
+        c.file_name = ""
+        c.file_display_name = ""
+        db.commit()
+    return {"status": "ok"}
+
+# Отдача файла для просмотра/скачивания
+@app.get("/api/files/{filename}")
+def get_file(filename: str):
+    fpath = os.path.join(UPLOAD_DIR, filename)
+    if not os.path.exists(fpath):
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    mime, _ = mimetypes.guess_type(fpath)
+    return FileResponse(
+        fpath,
+        media_type=mime or "application/octet-stream",
+        headers={"Content-Disposition": f"inline; filename={filename}"}
+    )
 
 @app.get("/api/settings")
 def get_settings(db: Session = Depends(get_db)):
@@ -233,7 +314,6 @@ def test_email(test_data: Optional[SettingsSchema] = None, db: Session = Depends
     )
     return {"success": success, "message": msg}
 
-# Отдача главной страницы БЕЗ кэширования браузером
 if getattr(sys, 'frozen', False):
     frontend_dir = os.path.join(sys._MEIPASS, "frontend")
 else:
